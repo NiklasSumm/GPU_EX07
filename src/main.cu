@@ -131,9 +131,49 @@ simpleNbody_Kernel(int numElements, Body_t *body)
 __global__ void
 sharedNbody_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
 {
-	// Use the packed values and SOA to optimize load and store operations
+	int elementId = blockIdx.x * blockDim.x + threadIdx.x;
+	int sharedId = threadIdx.x;
 
-	/*TODO Kernel Code*/
+	__shared__ float4 sharedBodyPos[4096];
+	//__shared__ float3 sharedBodySpeed[4096];
+
+	int tiles = (numElements + 4095) / 4096;
+
+	float4 elementPosMass;
+	float3 elementForce;
+	float3 elementSpeed;
+
+	if (elementId < numElements)
+	{
+		elementPosMass = bodyPos[elementId];
+		elementSpeed = bodySpeed[elementId];
+		elementForce = make_float3(0, 0, 0);
+
+		for (int tile = 0; tile < tiles; tile++)
+		{
+			__syncthreads();
+
+			if (sharedId < 4096){
+				sharedBodyPos[sharedId] = bodyPos[elementId];
+				//sharedBodySpeed[sharedId] = bodySpeed[elementId];
+			}
+
+			__syncthreads();
+
+			for (int i = 0; i < 4096; i++)
+			{
+				int id = tile * 4096 + i
+				if (id != elementId && id < numElements)
+				{
+					bodyBodyInteraction(elementPosMass, sharedBodyPos[i], elementForce);
+				}
+			}
+		}
+
+		calculateSpeed(elementPosMass.w, elementSpeed, elementForce);
+
+		bodySpeed[elementId] = elementSpeed;
+	}
 }
 
 //
@@ -153,6 +193,30 @@ updatePosition_Kernel(int numElements, Body_t *bodies)
 		elementPosMass.x += elementSpeed.x * TIMESTEP; 
 		elementPosMass.y += elementSpeed.y * TIMESTEP; 
 		elementPosMass.z += elementSpeed.z * TIMESTEP; 
+
+		bodies[elementId].posMass = elementPosMass;
+	}
+}
+
+//
+// n-Body Kernel to update the position
+// Neended to prevent write-after-read-hazards
+//
+__global__ void
+updatePositionSOA_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
+{
+	int elementId = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (elementId < numElements)
+	{
+		float4 elementPosMass = bodyPos[elementId];
+		float3 elementSpeed = bodySpeed[elementId];
+
+		elementPosMass.x += elementSpeed.x * TIMESTEP; 
+		elementPosMass.y += elementSpeed.y * TIMESTEP; 
+		elementPosMass.z += elementSpeed.z * TIMESTEP; 
+
+		bodyPos[elementId] = elementPosMass;
 	}
 }
 
@@ -196,16 +260,24 @@ int main(int argc, char *argv[])
 		pinnedMemory = chCommandLineGetBool("pinned-memory", argc, argv);
 	}
 
+	bool optimized = chCommandLineGetBool("optimized", argc, argv);
+
 	Body_t *h_particles;
+	float4 *h_posMasses;
+	float3 *h_speeds;
 	if (!pinnedMemory)
 	{
 		// Pageable
 		h_particles = static_cast<Body_t *>(malloc(static_cast<size_t>(numElements * sizeof(*h_particles))));
+		h_posMasses = static_cast<float4 *>(malloc(static_cast<size_t>(numElements * sizeof(*h_posMasses))));
+		h_speeds = static_cast<float3 *>(malloc(static_cast<size_t>(numElements * sizeof(*h_speeds))));
 	}
 	else
 	{
 		// Pinned
 		cudaMallocHost(&h_particles, static_cast<size_t>(numElements * sizeof(*h_particles)));
+		cudaMallocHost(&h_posMasses, static_cast<size_t>(numElements * sizeof(*h_posMasses)));
+		cudaMallocHost(&h_speeds, static_cast<size_t>(numElements * sizeof(*h_speeds)));
 	}
 
 	// Init Particles
@@ -213,20 +285,24 @@ int main(int argc, char *argv[])
 	srand(0); // Always the same random numbers
 	for (int i = 0; i < numElements; i++)
 	{
-		h_particles[i].posMass.x = 1e-8 * static_cast<float>(rand()); // Modify the random values to
-		h_particles[i].posMass.y = 1e-8 * static_cast<float>(rand()); // increase the position changes
-		h_particles[i].posMass.z = 1e-8 * static_cast<float>(rand()); // and the velocity
-		h_particles[i].posMass.w = 1e4 * static_cast<float>(rand());
-		h_particles[i].velocity.x = 0.0f;
-		h_particles[i].velocity.y = 0.0f;
-		h_particles[i].velocity.z = 0.0f;
+		h_particles[i].posMass.x = h_posMasses[i].x = 1e-8 * static_cast<float>(rand()); // Modify the random values to
+		h_particles[i].posMass.y = h_posMasses[i].y = 1e-8 * static_cast<float>(rand()); // increase the position changes
+		h_particles[i].posMass.z = h_posMasses[i].z = 1e-8 * static_cast<float>(rand()); // and the velocity
+		h_particles[i].posMass.w = h_posMasses[i].w = 1e4 * static_cast<float>(rand());
+		h_particles[i].velocity.x = h_speeds[i].x = 0.0f;
+		h_particles[i].velocity.y = h_speeds[i].y = 0.0f;
+		h_particles[i].velocity.z = h_speeds[i].z = 0.0f;
 	}
 
 	printElement(h_particles, 0, 0);
 
 	// Device Memory
 	Body_t *d_particles;
+	float4 *d_posMasses;
+	float3 *d_speeds;
 	cudaMalloc(&d_particles, static_cast<size_t>(numElements * sizeof(*d_particles)));
+	cudaMalloc(&d_posMasses, static_cast<size_t>(numElements * sizeof(*d_posMasses)));
+	cudaMalloc(&d_speeds, static_cast<size_t>(numElements * sizeof(*d_speeds)));
 
 	if (h_particles == NULL || d_particles == NULL)
 	{
@@ -242,7 +318,13 @@ int main(int argc, char *argv[])
 	//
 	memCpyH2DTimer.start();
 
-	cudaMemcpy(d_particles, h_particles, static_cast<size_t>(numElements * sizeof(*d_particles)), cudaMemcpyHostToDevice);
+	if (optimized){
+		cudaMemcpy(d_posMasses, h_posMasses, static_cast<size_t>(numElements * sizeof(*d_posMasses)), cudaMemcpyHostToDevice);
+		cudaMemcpy(d_speeds, h_speeds, static_cast<size_t>(numElements * sizeof(*d_speeds)), cudaMemcpyHostToDevice);
+	}
+	else{
+		cudaMemcpy(d_particles, h_particles, static_cast<size_t>(numElements * sizeof(*d_particles)), cudaMemcpyHostToDevice);
+	}
 
 	memCpyH2DTimer.stop();
 
@@ -288,8 +370,14 @@ int main(int argc, char *argv[])
 
 	for (int i = 0; i < numIterations; i++)
 	{
-		simpleNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_particles);
-		updatePosition_Kernel<<<grid_dim, block_dim>>>(numElements, d_particles);
+		if (optimized){
+			sharedNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
+			updatePositionSOA_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
+		}
+		else{
+			simpleNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_particles);
+			updatePosition_Kernel<<<grid_dim, block_dim>>>(numElements, d_particles);
+		}
 
 		cudaMemcpy(h_particles, d_particles, static_cast<size_t>(numElements * sizeof(*h_particles)), cudaMemcpyDeviceToHost);
 		if (!silent)
@@ -320,7 +408,14 @@ int main(int argc, char *argv[])
 	//
 	memCpyD2HTimer.start();
 
-	cudaMemcpy(h_particles, d_particles, static_cast<size_t>(numElements * sizeof(*d_particles)), cudaMemcpyDeviceToHost);
+	//cudaMemcpy(h_particles, d_particles, static_cast<size_t>(numElements * sizeof(*d_particles)), cudaMemcpyDeviceToHost);
+	if (optimized){
+		cudaMemcpy(h_posMasses, d_posMasses, static_cast<size_t>(numElements * sizeof(*d_posMasses)), cudaMemcpyHostToDevice);
+		cudaMemcpy(h_speeds, d_speeds, static_cast<size_t>(numElements * sizeof(*d_speeds)), cudaMemcpyHostToDevice);
+	}
+	else{
+		cudaMemcpy(h_particles, d_particles, static_cast<size_t>(numElements * sizeof(*d_particles)), cudaMemcpyHostToDevice);
+	}
 
 	memCpyD2HTimer.stop();
 
