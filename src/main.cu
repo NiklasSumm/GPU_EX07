@@ -60,7 +60,11 @@ void printElement(Body_t *, int, int);
 __device__ float
 getDistance(float4 a, float4 b)
 {
-	// TODO: Calculate distance of two particles
+	float dist_x = b.x - a.x;
+	float dist_y = b.y - a.y;
+	float dist_z = b.z - a.z;
+
+	return sqrt(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z);
 }
 
 //
@@ -74,7 +78,11 @@ bodyBodyInteraction(float4 bodyA, float4 bodyB, float3 &force)
 	if (distance == 0)
 		return;
 
-	// TODO: Calc Force
+	float intermediateResult = - GAMMA * (bodyA.w * bodyB.w) / (distance * distance);
+
+	force.x = intermediateResult * ((bodyA.x - bodyB.x) / distance);
+	force.y = intermediateResult * ((bodyA.y - bodyB.y) / distance);
+	force.z = intermediateResult * ((bodyA.z - bodyB.z) / distance);
 }
 
 //
@@ -83,7 +91,9 @@ bodyBodyInteraction(float4 bodyA, float4 bodyB, float3 &force)
 __device__ void
 calculateSpeed(float mass, float3 &currentSpeed, float3 force)
 {
-	// TODO: Calculate the new velocity of a particle
+	currentSpeed.x += (force.x / mass) * TIMESTEP;
+	currentSpeed.y += (force.y / mass) * TIMESTEP;
+	currentSpeed.z += (force.z / mass) * TIMESTEP;
 }
 
 //
@@ -137,7 +147,12 @@ updatePosition_Kernel(int numElements, Body_t *bodies)
 
 	if (elementId < numElements)
 	{
-		// TODO: Update position of a particle
+		float4 elementPosMass = bodies[elementId].posMass;
+		float3 elementSpeed = body[elementId].velocity;
+
+		elementPosMass.x += elementSpeed.x * TIMESTEP; 
+		elementPosMass.y += elementSpeed.y * TIMESTEP; 
+		elementPosMass.z += elementSpeed.z * TIMESTEP; 
 	}
 }
 
