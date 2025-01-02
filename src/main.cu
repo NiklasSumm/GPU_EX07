@@ -148,7 +148,7 @@ updatePosition_Kernel(int numElements, Body_t *bodies)
 	if (elementId < numElements)
 	{
 		float4 elementPosMass = bodies[elementId].posMass;
-		float3 elementSpeed = body[elementId].velocity;
+		float3 elementSpeed = bodies[elementId].velocity;
 
 		elementPosMass.x += elementSpeed.x * TIMESTEP; 
 		elementPosMass.y += elementSpeed.y * TIMESTEP; 
