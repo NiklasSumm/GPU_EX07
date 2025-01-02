@@ -379,11 +379,11 @@ int main(int argc, char *argv[])
 			updatePosition_Kernel<<<grid_dim, block_dim>>>(numElements, d_particles);
 		}
 
-		cudaMemcpy(h_particles, d_particles, static_cast<size_t>(numElements * sizeof(*h_particles)), cudaMemcpyDeviceToHost);
-		if (!silent)
-		{
-			printElement(h_particles, 0, i + 1);
-		}
+		//cudaMemcpy(h_particles, d_particles, static_cast<size_t>(numElements * sizeof(*h_particles)), cudaMemcpyDeviceToHost);
+		//if (!silent)
+		//{
+		//	printElement(h_particles, 0, i + 1);
+		//}
 	}
 
 	// Synchronize
