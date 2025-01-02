@@ -162,7 +162,7 @@ sharedNbody_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
 
 			for (int i = 0; i < 4096; i++)
 			{
-				int id = tile * 4096 + i
+				int id = tile * 4096 + i;
 				if (id != elementId && id < numElements)
 				{
 					bodyBodyInteraction(elementPosMass, sharedBodyPos[i], elementForce);
