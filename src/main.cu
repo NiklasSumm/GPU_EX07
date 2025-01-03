@@ -80,9 +80,9 @@ bodyBodyInteraction(float4 bodyA, float4 bodyB, float3 &force)
 
 	float intermediateResult = - GAMMA * (bodyA.w * bodyB.w) / (distance * distance);
 
-	force.x = intermediateResult * ((bodyA.x - bodyB.x) / distance);
-	force.y = intermediateResult * ((bodyA.y - bodyB.y) / distance);
-	force.z = intermediateResult * ((bodyA.z - bodyB.z) / distance);
+	force.x += intermediateResult * ((bodyA.x - bodyB.x) / distance);
+	force.y += intermediateResult * ((bodyA.y - bodyB.y) / distance);
+	force.z += intermediateResult * ((bodyA.z - bodyB.z) / distance);
 }
 
 //
