@@ -201,23 +201,23 @@ updatePosition_Kernel(int numElements, Body_t *bodies)
 // n-Body Kernel to update the position
 // Neended to prevent write-after-read-hazards
 //
-//__global__ void
-//updatePositionSOA_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
-//{
-//	int elementId = blockIdx.x * blockDim.x + threadIdx.x;
-//
-//	if (elementId < numElements)
-//	{
-//		float4 elementPosMass = bodyPos[elementId];
-//		float3 elementSpeed = bodySpeed[elementId];
-//
-//		elementPosMass.x += elementSpeed.x * TIMESTEP; 
-//		elementPosMass.y += elementSpeed.y * TIMESTEP; 
-//		elementPosMass.z += elementSpeed.z * TIMESTEP; 
-//
-//		bodyPos[elementId] = elementPosMass;
-//	}
-//}
+__global__ void
+updatePositionSOA_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
+{
+	int elementId = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (elementId < numElements)
+	{
+		float4 elementPosMass = bodyPos[elementId];
+		float3 elementSpeed = bodySpeed[elementId];
+
+		elementPosMass.x += elementSpeed.x * TIMESTEP; 
+		elementPosMass.y += elementSpeed.y * TIMESTEP; 
+		elementPosMass.z += elementSpeed.z * TIMESTEP; 
+
+		bodyPos[elementId] = elementPosMass;
+	}
+}
 
 //
 // Main
