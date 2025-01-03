@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
 	cudaDeviceSynchronize();
 
 	// Check for Errors
-	cudaError = cudaGetLastError();
+	cudaError_t cudaError = cudaGetLastError();
 	if (cudaError != cudaSuccess)
 	{
 		std::cout << "\033[31m***" << std::endl
@@ -417,8 +417,8 @@ int main(int argc, char *argv[])
 
 	//cudaMemcpy(h_particles, d_particles, static_cast<size_t>(numElements * sizeof(*d_particles)), cudaMemcpyDeviceToHost);
 	if (optimized){
-		cudaMemcpy(h_posMasses, d_posMasses, static_cast<size_t>(numElements * sizeof(*d_posMasses)), cudaMemcpyHostToDevice);
-		cudaMemcpy(h_speeds, d_speeds, static_cast<size_t>(numElements * sizeof(*d_speeds)), cudaMemcpyHostToDevice);
+		//cudaMemcpy(h_posMasses, d_posMasses, static_cast<size_t>(numElements * sizeof(*d_posMasses)), cudaMemcpyHostToDevice);
+		//cudaMemcpy(h_speeds, d_speeds, static_cast<size_t>(numElements * sizeof(*d_speeds)), cudaMemcpyHostToDevice);
 	}
 	else{
 		cudaMemcpy(h_particles, d_particles, static_cast<size_t>(numElements * sizeof(*d_particles)), cudaMemcpyHostToDevice);
