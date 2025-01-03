@@ -135,7 +135,6 @@ sharedNbody_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
 	int sharedId = threadIdx.x;
 
 	__shared__ float4 sharedBodyPos[4096];
-	//__shared__ float3 sharedBodySpeed[4096];
 
 	int tiles = (numElements + 4095) / 4096;
 
@@ -365,6 +364,17 @@ int main(int argc, char *argv[])
 	std::cout << "***" << std::endl;
 
 	bool silent = chCommandLineGetBool("silent", argc, argv);
+
+	cudaError_t cudaError = cudaGetLastError();
+	if (cudaError != cudaSuccess)
+	{
+		std::cout << "\033[31m***" << std::endl
+				  << "***ERROR*** " << cudaError << " - " << cudaGetErrorString(cudaError)
+				  << std::endl
+				  << "***\033[0m" << std::endl;
+
+		return -1;
+	}
 
 	kernelTimer.start();
 
