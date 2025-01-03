@@ -193,7 +193,7 @@ updatePosition_Kernel(int numElements, Body_t *bodies)
 		elementPosMass.y += elementSpeed.y * TIMESTEP; 
 		elementPosMass.z += elementSpeed.z * TIMESTEP; 
 
-		//bodies[elementId].posMass = elementPosMass;
+		bodies[elementId].posMass = elementPosMass;
 	}
 }
 
@@ -215,7 +215,7 @@ updatePosition_Kernel(int numElements, Body_t *bodies)
 //		elementPosMass.y += elementSpeed.y * TIMESTEP; 
 //		elementPosMass.z += elementSpeed.z * TIMESTEP; 
 //
-//		//bodyPos[elementId] = elementPosMass;
+//		bodyPos[elementId] = elementPosMass;
 //	}
 //}
 
