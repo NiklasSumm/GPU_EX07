@@ -153,8 +153,8 @@ sharedNbody_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
 		{
 			__syncthreads();
 
-			if (sharedId < 1024){
-				sharedBodyPos[sharedId] = bodyPos[elementId];
+			if (sharedId < 1024 && tile * 1024 + sharedId < numElements){
+				sharedBodyPos[sharedId] = bodyPos[tile * 1024 + sharedId];
 			}
 
 			__syncthreads();
