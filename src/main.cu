@@ -131,48 +131,48 @@ simpleNbody_Kernel(int numElements, Body_t *body)
 __global__ void
 sharedNbody_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
 {
-	int elementId = blockIdx.x * blockDim.x + threadIdx.x;
-	int sharedId = threadIdx.x;
-
-	__shared__ float4 sharedBodyPos[4096];
-
-	int tiles = (numElements + 4095) / 4096;
-
-	float4 elementPosMass;
-	float3 elementForce;
-	float3 elementSpeed;
-
-	if (elementId < numElements)
-	{
-		elementPosMass = bodyPos[elementId];
-		elementSpeed = bodySpeed[elementId];
-		elementForce = make_float3(0, 0, 0);
-
-		for (int tile = 0; tile < tiles; tile++)
-		{
-			__syncthreads();
-
-			if (sharedId < 4096){
-				sharedBodyPos[sharedId] = bodyPos[elementId];
-				//sharedBodySpeed[sharedId] = bodySpeed[elementId];
-			}
-
-			__syncthreads();
-
-			for (int i = 0; i < 4096; i++)
-			{
-				int id = tile * 4096 + i;
-				if (id != elementId && id < numElements)
-				{
-					bodyBodyInteraction(elementPosMass, sharedBodyPos[i], elementForce);
-				}
-			}
-		}
-
-		calculateSpeed(elementPosMass.w, elementSpeed, elementForce);
-
-		bodySpeed[elementId] = elementSpeed;
-	}
+	//int elementId = blockIdx.x * blockDim.x + threadIdx.x;
+	//int sharedId = threadIdx.x;
+//
+	//__shared__ float4 sharedBodyPos[4096];
+//
+	//int tiles = (numElements + 4095) / 4096;
+//
+	//float4 elementPosMass;
+	//float3 elementForce;
+	//float3 elementSpeed;
+//
+	//if (elementId < numElements)
+	//{
+	//	elementPosMass = bodyPos[elementId];
+	//	elementSpeed = bodySpeed[elementId];
+	//	elementForce = make_float3(0, 0, 0);
+//
+	//	for (int tile = 0; tile < tiles; tile++)
+	//	{
+	//		__syncthreads();
+//
+	//		if (sharedId < 4096){
+	//			sharedBodyPos[sharedId] = bodyPos[elementId];
+	//			//sharedBodySpeed[sharedId] = bodySpeed[elementId];
+	//		}
+//
+	//		__syncthreads();
+//
+	//		for (int i = 0; i < 4096; i++)
+	//		{
+	//			int id = tile * 4096 + i;
+	//			if (id != elementId && id < numElements)
+	//			{
+	//				bodyBodyInteraction(elementPosMass, sharedBodyPos[i], elementForce);
+	//			}
+	//		}
+	//	}
+//
+	//	calculateSpeed(elementPosMass.w, elementSpeed, elementForce);
+//
+	//	bodySpeed[elementId] = elementSpeed;
+	//}
 }
 
 //
@@ -201,23 +201,23 @@ updatePosition_Kernel(int numElements, Body_t *bodies)
 // n-Body Kernel to update the position
 // Neended to prevent write-after-read-hazards
 //
-__global__ void
-updatePositionSOA_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
-{
-	int elementId = blockIdx.x * blockDim.x + threadIdx.x;
-
-	if (elementId < numElements)
-	{
-		float4 elementPosMass = bodyPos[elementId];
-		float3 elementSpeed = bodySpeed[elementId];
-
-		elementPosMass.x += elementSpeed.x * TIMESTEP; 
-		elementPosMass.y += elementSpeed.y * TIMESTEP; 
-		elementPosMass.z += elementSpeed.z * TIMESTEP; 
-
-		//bodyPos[elementId] = elementPosMass;
-	}
-}
+//__global__ void
+//updatePositionSOA_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
+//{
+//	int elementId = blockIdx.x * blockDim.x + threadIdx.x;
+//
+//	if (elementId < numElements)
+//	{
+//		float4 elementPosMass = bodyPos[elementId];
+//		float3 elementSpeed = bodySpeed[elementId];
+//
+//		elementPosMass.x += elementSpeed.x * TIMESTEP; 
+//		elementPosMass.y += elementSpeed.y * TIMESTEP; 
+//		elementPosMass.z += elementSpeed.z * TIMESTEP; 
+//
+//		//bodyPos[elementId] = elementPosMass;
+//	}
+//}
 
 //
 // Main
