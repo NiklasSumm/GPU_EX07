@@ -384,7 +384,9 @@ int main(int argc, char *argv[])
 		}
 		else{
 			simpleNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_particles);
+			cudaDeviceSynchronize();
 			updatePosition_Kernel<<<grid_dim, block_dim>>>(numElements, d_particles);
+			cudaDeviceSynchronize();
 
 			cudaMemcpy(h_particles, d_particles, static_cast<size_t>(numElements * sizeof(*h_particles)), cudaMemcpyDeviceToHost);
 			if (!silent)
