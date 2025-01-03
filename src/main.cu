@@ -49,6 +49,7 @@ struct Body_t
 //
 void printHelp(char *);
 void printElement(Body_t *, int, int);
+void printElementSOA(float4, float3, int, int);
 
 //
 // Device Functions
@@ -388,7 +389,7 @@ int main(int argc, char *argv[])
 			cudaMemcpy(h_speeds, d_speeds, static_cast<size_t>(numElements * sizeof(*d_speeds)), cudaMemcpyDeviceToHost);
 			if (!silent)
 			{
-				printElementSOA(h_posMasses[0], h_speeds[0], i + 1);
+				printElementSOA(h_posMasses[0], h_speeds[0], 0, i + 1);
 			}
 		}
 		else{
@@ -523,7 +524,7 @@ void printElement(Body_t *particles, int elementId, int iteration)
 			  << "***" << std::endl;
 }
 
-void printElementSOA(float4 posMass, float3 velocity, int iteration)
+void printElementSOA(float4 posMass, float3 velocity, int elementId, int iteration)
 {
 	std::cout << "***" << std::endl
 			  << "*** Printing Element " << elementId << " in iteration " << iteration << std::endl
