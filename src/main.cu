@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
 		pinnedMemory = chCommandLineGetBool("pinned-memory", argc, argv);
 	}
 
-	bool optimized = chCommandLineGetBool("optimized", argc, argv);
+	//bool optimized = chCommandLineGetBool("optimized", argc, argv);
 
 	Body_t *h_particles;
 	//float4 *h_posMasses;
@@ -325,13 +325,13 @@ int main(int argc, char *argv[])
 	//
 	memCpyH2DTimer.start();
 
-	if (optimized){
+	//if (optimized){
 		//cudaMemcpy(d_posMasses, h_posMasses, static_cast<size_t>(numElements * sizeof(*d_posMasses)), cudaMemcpyHostToDevice);
 		//cudaMemcpy(d_speeds, h_speeds, static_cast<size_t>(numElements * sizeof(*d_speeds)), cudaMemcpyHostToDevice);
-	}
-	else{
+	//}
+	//else{
 		cudaMemcpy(d_particles, h_particles, static_cast<size_t>(numElements * sizeof(*d_particles)), cudaMemcpyHostToDevice);
-	}
+	//}
 
 	memCpyH2DTimer.stop();
 
@@ -377,11 +377,11 @@ int main(int argc, char *argv[])
 
 	for (int i = 0; i < numIterations; i++)
 	{
-		if (optimized){
+		//if (optimized){
 			//sharedNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
 			//updatePositionSOA_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
-		}
-		else{
+		//}
+		//else{
 			simpleNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_particles);
 			updatePosition_Kernel<<<grid_dim, block_dim>>>(numElements, d_particles);
 
@@ -390,7 +390,7 @@ int main(int argc, char *argv[])
 			{
 				printElement(h_particles, 0, i + 1);
 			}
-		}
+		//}
 	}
 
 	// Synchronize
@@ -416,13 +416,13 @@ int main(int argc, char *argv[])
 	memCpyD2HTimer.start();
 
 	//cudaMemcpy(h_particles, d_particles, static_cast<size_t>(numElements * sizeof(*d_particles)), cudaMemcpyDeviceToHost);
-	if (optimized){
+	//if (optimized){
 		//cudaMemcpy(h_posMasses, d_posMasses, static_cast<size_t>(numElements * sizeof(*d_posMasses)), cudaMemcpyHostToDevice);
 		//cudaMemcpy(h_speeds, d_speeds, static_cast<size_t>(numElements * sizeof(*d_speeds)), cudaMemcpyHostToDevice);
-	}
-	else{
+	//}
+	//else{
 		cudaMemcpy(h_particles, d_particles, static_cast<size_t>(numElements * sizeof(*d_particles)), cudaMemcpyHostToDevice);
-	}
+	//}
 
 	memCpyD2HTimer.stop();
 
