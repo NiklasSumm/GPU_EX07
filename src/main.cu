@@ -371,8 +371,8 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < numIterations; i++)
 	{
 		if (optimized){
-			sharedNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
-			updatePositionSOA_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
+			//sharedNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
+			//updatePositionSOA_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
 		}
 		else{
 			simpleNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_particles);
