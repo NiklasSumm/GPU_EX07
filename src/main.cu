@@ -136,7 +136,7 @@ sharedNbody_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
 
 	__shared__ float4 sharedBodyPos[1024];
 
-	int tiles = (numElements + 4095) / 4096;
+	int tiles = (numElements + 1023) / 1024;
 
 	float4 elementPosMass;
 	float3 elementForce;
@@ -152,16 +152,15 @@ sharedNbody_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
 		{
 			__syncthreads();
 
-			if (sharedId < 4096){
+			if (sharedId < 1024){
 				sharedBodyPos[sharedId] = bodyPos[elementId];
-				//sharedBodySpeed[sharedId] = bodySpeed[elementId];
 			}
 
 			__syncthreads();
 
-			for (int i = 0; i < 4096; i++)
+			for (int i = 0; i < 1024; i++)
 			{
-				int id = tile * 4096 + i;
+				int id = tile * 1024 + i;
 				if (id != elementId && id < numElements)
 				{
 					bodyBodyInteraction(elementPosMass, sharedBodyPos[i], elementForce);
