@@ -134,7 +134,7 @@ sharedNbody_Kernel(int numElements, float4 *bodyPos, float3 *bodySpeed)
 	int elementId = blockIdx.x * blockDim.x + threadIdx.x;
 	int sharedId = threadIdx.x;
 
-	__shared__ float4 sharedBodyPos[10];
+	__shared__ float4 sharedBodyPos[4096];
 
 	int tiles = (numElements + 4095) / 4096;
 
