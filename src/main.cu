@@ -365,7 +365,7 @@ int main(int argc, char *argv[])
 
 	bool silent = chCommandLineGetBool("silent", argc, argv);
 
-	cudaError = cudaGetLastError();
+	cudaError_t cudaError = cudaGetLastError();
 	if (cudaError != cudaSuccess)
 	{
 		std::cout << "\033[31m***" << std::endl
@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
 	cudaDeviceSynchronize();
 
 	// Check for Errors
-	cudaError_t cudaError = cudaGetLastError();
+	cudaError = cudaGetLastError();
 	if (cudaError != cudaSuccess)
 	{
 		std::cout << "\033[31m***" << std::endl
