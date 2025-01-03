@@ -379,8 +379,17 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < numIterations; i++)
 	{
 		if (optimized){
-			//sharedNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
-			//updatePositionSOA_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
+			sharedNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
+			cudaDeviceSynchronize();
+			updatePositionSOA_Kernel<<<grid_dim, block_dim>>>(numElements, d_posMasses, d_speeds);
+			cudaDeviceSynchronize();
+
+			cudaMemcpy(h_posMasses, d_posMasses, static_cast<size_t>(numElements * sizeof(*d_posMasses)), cudaMemcpyDeviceToHost);
+			cudaMemcpy(h_speeds, d_speeds, static_cast<size_t>(numElements * sizeof(*d_speeds)), cudaMemcpyDeviceToHost);
+			if (!silent)
+			{
+				printElementSOA(h_posMasses[0], h_speeds[0], i + 1);
+			}
 		}
 		else{
 			simpleNbody_Kernel<<<grid_dim, block_dim>>>(numElements, d_particles);
@@ -498,6 +507,24 @@ void printElement(Body_t *particles, int elementId, int iteration)
 	float4 posMass = particles[elementId].posMass;
 	float3 velocity = particles[elementId].velocity;
 
+	std::cout << "***" << std::endl
+			  << "*** Printing Element " << elementId << " in iteration " << iteration << std::endl
+			  << "***" << std::endl
+			  << "*** Position: <"
+			  << std::setw(11) << std::setprecision(9) << posMass.x << "|"
+			  << std::setw(11) << std::setprecision(9) << posMass.y << "|"
+			  << std::setw(11) << std::setprecision(9) << posMass.z << "> [m]" << std::endl
+			  << "*** velocity: <"
+			  << std::setw(11) << std::setprecision(9) << velocity.x << "|"
+			  << std::setw(11) << std::setprecision(9) << velocity.y << "|"
+			  << std::setw(11) << std::setprecision(9) << velocity.z << "> [m/s]" << std::endl
+			  << "*** Mass: <"
+			  << std::setw(11) << std::setprecision(9) << posMass.w << "> [kg]" << std::endl
+			  << "***" << std::endl;
+}
+
+void printElementSOA(float4 posMass, float3 velocity, int iteration)
+{
 	std::cout << "***" << std::endl
 			  << "*** Printing Element " << elementId << " in iteration " << iteration << std::endl
 			  << "***" << std::endl
